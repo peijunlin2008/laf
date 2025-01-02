@@ -1,3 +1,4 @@
+/* stylelint-disable selector-class-pattern */
 #log-viewer-container {
   .pf-v5-c-text-input-group__icon {
     visibility: hidden;
@@ -27,5 +28,18 @@
 
   [data-theme="dark"] & .pf-m-match {
     background: #2b7873 !important;
+  }
+}
+
+.log-viewer-container-hide-scrollbar {
+  &,
+  & * {
+    &::-webkit-scrollbar {
+      width: 0 !important;
+      height: 0 !important;
+    }
+
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
   }
 }

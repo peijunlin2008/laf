@@ -28,6 +28,9 @@ export type RegionDatabaseConf = {
   driver: string
   connectionUri: string
   controlConnectionUri: string
+  dedicatedDatabase: {
+    enabled: boolean
+  }
 }
 
 export type TLSConf = {
@@ -67,6 +70,10 @@ export type PrometheusConf = {
   apiUrl: string
 }
 
+export type DeployManifest = {
+  [key: string]: string
+}
+
 export class Region {
   @ApiProperty({ type: String })
   _id?: ObjectId
@@ -85,6 +92,8 @@ export class Region {
   storageConf: RegionStorageConf
   logServerConf: LogServerConf
   prometheusConf: PrometheusConf
+
+  deployManifest: DeployManifest
 
   @ApiProperty()
   state: 'Active' | 'Inactive'

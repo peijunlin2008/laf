@@ -1,9 +1,12 @@
 import { lazy, Suspense } from "react";
+import { useRoutes } from "react-router-dom";
+import { wrapUseRoutes } from "@sentry/react";
 
 import AuthLayout from "@/layouts/Auth";
 import BasicLayout from "@/layouts/Basic";
 import FunctionLayout from "@/layouts/Function";
 import TemplateLayout from "@/layouts/Template";
+import useSiteSettingStore, { SiteSettings } from "@/pages/siteSetting";
 
 const route404 = {
   path: "*",
@@ -46,7 +49,6 @@ const routes = [
   },
   {
     path: "/bind",
-    // element: <AuthLayout />,
     auth: false,
     children: [
       {
@@ -146,19 +148,46 @@ function LazyElement(props: any) {
   );
 }
 
-function dealRoutes(routesArr: any) {
+function dealRoutes(routesArr: any, siteSettings: SiteSettings) {
   if (routesArr && Array.isArray(routesArr) && routesArr.length > 0) {
+    if (siteSettings.enable_web_promo_page?.value === "false") {
+      for (let i = 0; i < routesArr.length; i++) {
+        const route = routesArr[i];
+        if (route.index) {
+          routesArr[i] = {
+            path: "/",
+            element: <BasicLayout />,
+            auth: true,
+            children: [
+              {
+                path: "/",
+                element: () => import("@/pages/home/index"),
+              },
+            ],
+          };
+        }
+      }
+    }
+
     routesArr.forEach((route) => {
       if (route.element && typeof route.element == "function") {
         const importFunc = route.element;
         route.element = <LazyElement importFunc={importFunc} />;
       }
       if (route.children) {
-        dealRoutes(route.children);
+        dealRoutes(route.children, siteSettings);
       }
     });
   }
 }
-dealRoutes(routes);
 
-export default routes;
+function RouteElement() {
+  const { siteSettings } = useSiteSettingStore();
+  const useSentryRoutes = wrapUseRoutes(useRoutes);
+
+  dealRoutes(routes, siteSettings);
+  const element = useSentryRoutes(routes as any);
+  return element;
+}
+
+export default RouteElement;

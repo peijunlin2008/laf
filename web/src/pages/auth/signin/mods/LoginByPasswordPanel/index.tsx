@@ -12,7 +12,9 @@ import {
 import { t } from "i18next";
 
 import { OutlineViewOffIcon, OutlineViewOnIcon } from "@/components/CommonIcon";
-import { Routes } from "@/constants";
+import { PROVIDER_NAME, Routes } from "@/constants";
+
+import { providersTypes } from "../..";
 
 import { useGroupMemberAddMutation } from "@/pages/app/collaboration/service";
 import {
@@ -27,14 +29,16 @@ type FormData = {
 };
 
 export default function LoginByPasswordPanel({
-  switchLoginType,
+  setCurrentProvider,
   showSignupBtn,
   showPhoneSigninBtn,
+  showEmailSigninBtn,
   isDarkMode,
 }: {
-  switchLoginType: () => void;
+  setCurrentProvider: (provider: providersTypes) => void;
   showSignupBtn: boolean;
   showPhoneSigninBtn: boolean;
+  showEmailSigninBtn: boolean;
   isDarkMode: boolean;
 }) {
   const signinByPasswordMutation = useSigninByPasswordMutation();
@@ -143,22 +147,48 @@ export default function LoginByPasswordPanel({
           {t("AuthPanel.Login")}
         </Button>
         <div className="mt-5 flex justify-between">
-          <div>
-            <Button
-              className="!pl-2 !pr-0 text-lg"
-              variant={"text"}
-              onClick={() => navigate("/reset-password", { replace: true })}
-            >
-              {t("AuthPanel.ForgotPassword")}
-            </Button>
-          </div>
+          {showPhoneSigninBtn || showEmailSigninBtn ? (
+            <div>
+              <Button
+                className="!pl-2 !pr-0 text-lg"
+                variant={"text"}
+                onClick={() => navigate("/reset-password", { replace: true })}
+              >
+                {t("AuthPanel.ForgotPassword")}
+              </Button>
+            </div>
+          ) : (
+            <div></div>
+          )}
           <div className="flex">
             {showPhoneSigninBtn && (
-              <Button className="!px-2 text-lg" variant={"text"} onClick={switchLoginType}>
+              <Button
+                className="!px-2 text-lg"
+                variant={"text"}
+                onClick={() => {
+                  setCurrentProvider(PROVIDER_NAME.PHONE);
+                }}
+              >
                 {t("AuthPanel.PhoneLogin")}
               </Button>
             )}
-            {showPhoneSigninBtn && showSignupBtn && (
+            {showSignupBtn && showPhoneSigninBtn && (
+              <div className="mx-3 flex items-center">
+                <span className="h-3 w-[1px] bg-primary-500 text-primary-500"></span>
+              </div>
+            )}
+            {showEmailSigninBtn && (
+              <Button
+                className="!px-2 text-lg"
+                variant={"text"}
+                onClick={() => {
+                  setCurrentProvider(PROVIDER_NAME.EMAIL);
+                }}
+              >
+                {t("AuthPanel.EmailLogin")}
+              </Button>
+            )}
+            {showSignupBtn && showEmailSigninBtn && (
               <div className="mx-3 flex items-center">
                 <span className="h-3 w-[1px] bg-primary-500 text-primary-500"></span>
               </div>

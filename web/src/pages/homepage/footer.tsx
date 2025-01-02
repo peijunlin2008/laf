@@ -30,13 +30,15 @@ const Footer = (props: Props) => {
           <div className="py-[60px]">
             <div className="flex justify-between">
               <div className="w-1/2">
-                <img
-                  src={darkMode ? "logo_light.png" : "/homepage/logo_text.png"}
-                  alt="logo"
-                  width={64}
-                  height={30}
-                  className="mt-4"
-                />
+                <div className="flex items-center space-x-2">
+                  <img
+                    src={darkMode ? "sealos-logo.svg" : "sealos-logo.svg"}
+                    className="h-8 w-auto"
+                    alt="logo"
+                  />
+                  <span className="text-lg"> {t("app.logo")}</span>
+                </div>
+
                 <p
                   className={
                     darkMode
@@ -117,11 +119,13 @@ const Footer = (props: Props) => {
                       {t("HomePage.Footer.item2_4")}
                     </a>
                   </li>
-                  <li>
-                    <a href={site_url.laf_doc} target="_blank" rel="noreferrer">
-                      {t("HomePage.Footer.item2_5")}
-                    </a>
-                  </li>
+                  {siteSettings.laf_doc_url?.value && (
+                    <li>
+                      <a href={siteSettings.laf_doc_url?.value} target="_blank" rel="noreferrer">
+                        {t("HomePage.Footer.item2_5")}
+                      </a>
+                    </li>
+                  )}
                 </ul>
               </div>
               <div
@@ -143,17 +147,25 @@ const Footer = (props: Props) => {
                     </a>
                   </li>
 
-                  <li>
-                    <a href={siteSettings.laf_forum_url?.value} target="_blank" rel="noreferrer">
-                      {t("HomePage.Footer.item3_2")}
-                    </a>
-                  </li>
+                  {siteSettings.laf_forum_url?.value && (
+                    <li>
+                      <a href={siteSettings.laf_forum_url?.value} target="_blank" rel="noreferrer">
+                        {t("HomePage.Footer.item3_2")}
+                      </a>
+                    </li>
+                  )}
 
-                  <li>
-                    <a href={site_url.laf_about_us} target="_blank" rel="noreferrer">
-                      {t("HomePage.Footer.item3_3")}
-                    </a>
-                  </li>
+                  {siteSettings.laf_about_us_url?.value && (
+                    <li>
+                      <a
+                        href={siteSettings.laf_about_us_url?.value}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {t("HomePage.Footer.item3_3")}
+                      </a>
+                    </li>
+                  )}
                 </ul>
               </div>
             </div>
@@ -164,8 +176,12 @@ const Footer = (props: Props) => {
                 darkMode ? "w-1/2 text-lg text-lafWhite-700" : "w-1/2 text-lg text-[#3C455D]"
               }
             >
-              laf. all rights reserved. © {new Date().getFullYear()}
-              <div dangerouslySetInnerHTML={{ __html: siteSettings.site_footer?.value || "" }} />
+              sealos. all rights reserved. © {new Date().getFullYear()}
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: siteSettings.site_footer?.value || "",
+                }}
+              />
             </div>
             <div className="flex justify-evenly ">
               {siteSettings.laf_status_url?.value && <Status />}
@@ -271,17 +287,25 @@ const Footer = (props: Props) => {
                     </a>
                   </li>
 
-                  <li>
-                    <a href={siteSettings.laf_forum_url?.value} target="_blank" rel="noreferrer">
-                      {t("HomePage.Footer.item3_2")}
-                    </a>
-                  </li>
+                  {siteSettings.laf_forum_url?.value && (
+                    <li>
+                      <a href={siteSettings.laf_forum_url?.value} target="_blank" rel="noreferrer">
+                        {t("HomePage.Footer.item3_2")}
+                      </a>
+                    </li>
+                  )}
 
-                  <li>
-                    <a href={site_url.laf_about_us} target="_blank" rel="noreferrer">
-                      {t("HomePage.Footer.item3_3")}
-                    </a>
-                  </li>
+                  {siteSettings.laf_about_us_url?.value && (
+                    <li>
+                      <a
+                        href={siteSettings.laf_about_us_url?.value}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {t("HomePage.Footer.item3_3")}
+                      </a>
+                    </li>
+                  )}
                 </ul>
               </div>
             </div>
@@ -312,11 +336,13 @@ const Footer = (props: Props) => {
                     {t("HomePage.Footer.item2_4")}
                   </a>
                 </li>
-                <li>
-                  <a href={site_url.laf_doc} target="_blank" rel="noreferrer">
-                    {t("HomePage.Footer.item2_5")}
-                  </a>
-                </li>
+                {siteSettings.laf_doc_url?.value && (
+                  <li>
+                    <a href={siteSettings.laf_doc_url?.value} target="_blank" rel="noreferrer">
+                      {t("HomePage.Footer.item2_5")}
+                    </a>
+                  </li>
+                )}
               </ul>
             </div>
           </div>
@@ -325,7 +351,11 @@ const Footer = (props: Props) => {
         <div className="flex flex-col gap-2 py-6 ">
           <div className={darkMode ? "text-lg text-lafWhite-700" : "text-lg text-[#3C455D]"}>
             laf. all rights reserved. © {new Date().getFullYear()}
-            <div dangerouslySetInnerHTML={{ __html: siteSettings.site_footer?.value || "" }} />
+            <div
+              dangerouslySetInnerHTML={{
+                __html: siteSettings.site_footer?.value || "",
+              }}
+            />
           </div>
           <div className="flex ">
             {siteSettings.laf_wechat_url?.value && (
@@ -333,12 +363,16 @@ const Footer = (props: Props) => {
                 <WechatIcon fontSize={28} color={darkMode ? "#F6F8F9" : "#3C455D"} />
               </a>
             )}
-            <a href={siteSettings.laf_forum_url?.value} target="_blank" rel="noreferrer">
-              <ForumIcon fontSize={28} color={darkMode ? "#F6F8F9" : "#3C455D"} />
-            </a>
-            <a href={siteSettings.laf_discord_url?.value} target="_blank" rel="noreferrer">
-              <DiscordIcon fontSize={28} color={darkMode ? "#F6F8F9" : "#3C455D"} />
-            </a>
+            {siteSettings.laf_forum_url?.value && (
+              <a href={siteSettings.laf_forum_url?.value} target="_blank" rel="noreferrer">
+                <ForumIcon fontSize={28} color={darkMode ? "#F6F8F9" : "#3C455D"} />
+              </a>
+            )}
+            {siteSettings.laf_discord_url?.value && (
+              <a href={siteSettings.laf_discord_url?.value} target="_blank" rel="noreferrer">
+                <DiscordIcon fontSize={28} color={darkMode ? "#F6F8F9" : "#3C455D"} />
+              </a>
+            )}
           </div>
           <div>
             <Status />

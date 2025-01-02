@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import {
@@ -20,7 +20,6 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { t } from "i18next";
-import { debounce } from "lodash";
 
 import { MoreTemplateIcon, TextIcon } from "@/components/CommonIcon";
 import InputTag from "@/components/InputTag";
@@ -32,7 +31,10 @@ import useFunctionStore from "../../../store";
 import { TFunctionTemplate, TMethod } from "@/apis/typing";
 import FunctionTemplate from "@/pages/functionTemplate";
 import TemplateCard from "@/pages/functionTemplate/Mods/TemplateCard";
-import { useGetRecommendFunctionTemplatesQuery } from "@/pages/functionTemplate/service";
+import {
+  useGetFunctionTemplatesQuery,
+  useGetRecommendFunctionTemplatesQuery,
+} from "@/pages/functionTemplate/service";
 import useTemplateStore from "@/pages/functionTemplate/store";
 import useGlobalStore from "@/pages/globalStore";
 
@@ -41,17 +43,26 @@ const CreateModal = (props: {
   children?: React.ReactElement;
   tagList?: any;
   aiCode?: string;
+  hideContextMenu?: () => void;
 }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { showSuccess, currentApp } = useGlobalStore();
 
-  const { functionItem, children = null, tagList, aiCode } = props;
+  const { functionItem, children = null, tagList, aiCode, hideContextMenu } = props;
   const isEdit = !!functionItem;
   const navigate = useNavigate();
   const [searchKey, setSearchKey] = useState("");
   const [templateOpen, setTemplateOpen] = useState(false);
-  const { recentFunctionList, setRecentFunctionList } = useFunctionStore();
+  const { recentFunctionList, setRecentFunctionList, setCurrentFunction, currentFunction } =
+    useFunctionStore();
   const { setShowTemplateItem } = useTemplateStore();
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const templateId = searchParams.get("templateId");
+    if (!templateId) return;
+    localStorage.setItem("templateId", templateId);
+  }, []);
 
   const defaultValues = {
     name: functionItem?.name || "",
@@ -99,6 +110,31 @@ const CreateModal = (props: {
       enabled: !isOpen && !isEdit,
     },
   );
+  const searchedTemplateList = useGetFunctionTemplatesQuery(
+    {
+      page: 1,
+      pageSize: 3,
+      keyword: localStorage.getItem("templateId") || "",
+      type: "default",
+      asc: 1,
+      sort: null,
+    },
+    {
+      enabled: !!localStorage.getItem("templateId") && !isEdit,
+    },
+  );
+
+  const recommendedList = useMemo(
+    () => InitialTemplateList.data?.data.list || [],
+    [InitialTemplateList],
+  );
+  const searchedList = useMemo(
+    () => searchedTemplateList.data?.data.list || [],
+    [searchedTemplateList],
+  );
+  const showedList = useMemo(() => {
+    return [...searchedList, ...recommendedList].slice(0, 3);
+  }, [searchedList, recommendedList]);
 
   const onSubmit = async (data: any) => {
     let res: any = {};
@@ -116,8 +152,10 @@ const CreateModal = (props: {
           return item;
         }),
       );
+      setCurrentFunction({ ...currentFunction, name: data.name });
     } else if (isEdit && functionItem.name === data.name) {
       res = await updateFunctionMutation.mutateAsync(data);
+      setCurrentFunction({ ...currentFunction, ...data });
     } else {
       res = await createFunctionMutation.mutateAsync(data);
     }
@@ -126,7 +164,8 @@ const CreateModal = (props: {
       showSuccess(isEdit ? t("update success") : t("create success"));
       onClose();
       reset(defaultValues);
-      navigate(`/app/${currentApp.appid}/function/${res.data.name}`);
+      navigate(`/app/${currentApp.appid}/function/${res.data.name}`, { replace: true });
+      hideContextMenu && hideContextMenu();
     }
   };
 
@@ -159,7 +198,7 @@ const CreateModal = (props: {
                   <input
                     {...register("name", {
                       pattern: {
-                        value: /^[a-zA-Z0-9_.\-/]{1,256}$/,
+                        value: /^[a-zA-Z0-9_.\-](?:[a-zA-Z0-9_.\-/]{0,254}[a-zA-Z0-9_.\-])?$/,
                         message: t("FunctionPanel.FunctionNameRule"),
                       },
                     })}
@@ -167,9 +206,9 @@ const CreateModal = (props: {
                     placeholder={String(t("FunctionPanel.FunctionNameTip"))}
                     className="h-8 w-full border-l-2 border-primary-600 bg-transparent pl-4 text-2xl font-medium"
                     style={{ outline: "none", boxShadow: "none" }}
-                    onChange={debounce((e) => {
+                    onChange={(e) => {
                       setSearchKey(e.target.value);
-                    }, 200)}
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         onSubmit({ ...getValues(), name: searchKey });
@@ -222,7 +261,6 @@ const CreateModal = (props: {
                   />
                 </div>
               </FormControl>
-
               <Button
                 type="submit"
                 onClick={handleSubmit(onSubmit)}
@@ -242,7 +280,7 @@ const CreateModal = (props: {
                     {t("Template.Recommended")}
                   </div>
                   <div className="mb-11 flex w-full">
-                    {InitialTemplateList.data?.data.list.map((item: TFunctionTemplate) => (
+                    {showedList.map((item: TFunctionTemplate) => (
                       <section
                         className="h-28 w-1/3 px-1.5 py-1"
                         key={item._id}
@@ -277,7 +315,7 @@ const CreateModal = (props: {
         isOpen={templateOpen}
         onClose={() => {
           setTemplateOpen(!templateOpen);
-          navigate(`/app/${currentApp.appid}/function`);
+          navigate(`/app/${currentApp.appid}/function`, { replace: true });
         }}
       >
         <ModalOverlay />

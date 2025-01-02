@@ -4,6 +4,7 @@ import { WEBSOCKET_FUNCTION_NAME } from '../constants'
 import { logger } from './logger'
 import { generateUUID } from './utils'
 import { FunctionModule } from './engine/module'
+import { FunctionContext } from './engine'
 
 export class WebSocketAgent {
   private static _server = null
@@ -66,12 +67,13 @@ async function handleWebSocketEvent(
   socket: WebSocket,
   request?: IncomingMessage,
 ) {
-  const param: any = {
+  const param: FunctionContext = {
     params: data,
     method: event,
     requestId: generateUUID(),
     socket,
     __function_name: WEBSOCKET_FUNCTION_NAME,
+    url: request?.url,
     headers: request?.headers,
   }
 

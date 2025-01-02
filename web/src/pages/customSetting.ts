@@ -23,6 +23,13 @@ type storagePanel = "SideBar" | string;
 export type panel = functionPanel | collectionPanel | storagePanel;
 export type page = "functionPage" | "collectionPage" | "storagePage";
 
+type TCommonSettings = {
+  fontSize: number;
+  funcListDisplay: string;
+  useLSP: boolean;
+  useCopilot: boolean;
+};
+
 type State = {
   layoutInfo: {
     storagePage: {
@@ -46,11 +53,8 @@ type State = {
     position: { width: number; height: number },
   ) => void;
   togglePanel: (pageId: page, panelId: panel) => void;
-  commonSettings: {
-    fontSize: number;
-    funcListDisplay: string;
-  };
-  setCommonSettings: (settings: { fontSize: number; funcListDisplay: String }) => void;
+  commonSettings: TCommonSettings;
+  setCommonSettings: (settings: TCommonSettings) => void;
 };
 
 const useCustomSettingStore = create<State>()(
@@ -62,8 +66,8 @@ const useCustomSettingStore = create<State>()(
             SideBar: {
               id: "SideBar",
               style: {
-                width: 218,
-                minWidth: 0,
+                width: 240,
+                minWidth: 220,
               },
             },
 
@@ -71,7 +75,7 @@ const useCustomSettingStore = create<State>()(
               id: "RightPanel",
               style: {
                 width: 270,
-                minWidth: 0,
+                minWidth: 232,
               },
             },
 
@@ -113,7 +117,7 @@ const useCustomSettingStore = create<State>()(
               id: "SideBar",
               style: {
                 width: 300,
-                minWidth: 0,
+                minWidth: 206,
               },
             },
             CollectionPanel: {
@@ -142,7 +146,7 @@ const useCustomSettingStore = create<State>()(
               id: "SideBar",
               style: {
                 width: 300,
-                minWidth: 0,
+                minWidth: 230,
                 maxWidth: 800,
               },
             },
@@ -173,6 +177,8 @@ const useCustomSettingStore = create<State>()(
         commonSettings: {
           fontSize: 14,
           funcListDisplay: "name",
+          useLSP: true,
+          useCopilot: true,
         },
 
         setCommonSettings: (settings) => {
@@ -184,7 +190,7 @@ const useCustomSettingStore = create<State>()(
 
       {
         name: "laf_custom_setting",
-        version: 2,
+        version: 3,
       },
     ),
   ),

@@ -42,64 +42,44 @@ const strokeColorArray = [
 
 const generateChartData = () => {
   const now = new Date();
-  now.setSeconds(0);
-  now.setMilliseconds(0);
-  const currentTimestamp = now.getTime();
-  let chartData = [];
-
-  for (let i = 0; i <= 60; i++) {
-    const timestamp = currentTimestamp - (60 - i) * 60 * 1000;
-    chartData.push({ xData: timestamp });
-  }
-
-  return chartData;
+  now.setSeconds(0, 0);
+  const startTime = now.getTime() - 59 * 60 * 1000;
+  return Array(60)
+    .fill({ xData: 0 })
+    .map((_, i) => ({ xData: startTime + i * 60 * 1000 }));
 };
 
-function mergeArrays(arrays: any) {
-  let mergedArray: any = [];
-  const longestArray = generateChartData();
-  const newArrays = arrays.map((arr: any) => {
-    let frontPadding = 0;
-    let endPadding = 0;
-    for (let i = 0; i < longestArray.length; i++) {
-      const lastTime = new Date(arr[arr.length - 1].xData);
-      lastTime.setSeconds(0);
-      lastTime.setMilliseconds(0);
-      const firstTime = new Date(arr[0].xData);
-      firstTime.setSeconds(0);
-      firstTime.setMilliseconds(0);
+type DataPoint = {
+  xData: number;
+  [key: string]: number | undefined;
+};
 
-      if (longestArray[i].xData === firstTime.getTime()) {
-        frontPadding = i;
+function mergeArrays(dataArrays: (DataPoint[] | null)[]): DataPoint[] {
+  const baseChartData = generateChartData();
+  return baseChartData.map((basePoint) => {
+    const mergedPoint: DataPoint = { xData: basePoint.xData };
+    dataArrays.forEach((arr, index) => {
+      if (!arr || arr.length === 0) return;
+      const matchingPoint = arr.find((p) => p.xData === basePoint.xData);
+      if (matchingPoint) {
+        mergedPoint[`value${index}`] = matchingPoint[`value${index}`] ?? 0;
+      } else {
+        mergedPoint[`value${index}`] = undefined;
       }
-      if (longestArray[i].xData === lastTime.getTime()) {
-        endPadding = longestArray.length - i - 1;
-      }
-    }
-    return [
-      ...Array(frontPadding).fill({ xData: 0 }),
-      ...arr,
-      ...Array(endPadding).fill({ xData: 0 }),
-    ];
+    });
+    return mergedPoint;
   });
-
-  for (let i = 60; i >= 0; i--) {
-    let mergedElement = { xData: 0 };
-    mergedElement.xData = longestArray[i].xData;
-    for (let j = 0; j < newArrays.length; j++) {
-      // @ts-ignore
-      mergedElement[`value${j}`] = newArrays[j][i][`value${j}`];
-    }
-    mergedArray = [mergedElement, ...mergedArray];
-  }
-
-  return mergedArray;
 }
 
 function extractNumber(str: string) {
   const match = str.match(/\d+$/) || [];
   return Number(match[0]);
 }
+const modifyTimestamp = (t: number) => {
+  let date = new Date(t * 1000);
+  date.setSeconds(0, 0);
+  return date.getTime();
+};
 
 export default function AreaCard(props: {
   data: TCpuUsageData;
@@ -112,6 +92,8 @@ export default function AreaCard(props: {
   maxValue: number;
   unit: string;
   className?: string;
+  longestTick: string;
+  onLongestTickChange: (val: string) => void;
 }) {
   const {
     data,
@@ -124,6 +106,8 @@ export default function AreaCard(props: {
     maxValue,
     unit,
     className,
+    longestTick,
+    onLongestTickChange,
   } = props;
   const [chartData, setChartData] = useState<any[]>([]);
   useEffect(() => {
@@ -134,12 +118,12 @@ export default function AreaCard(props: {
           const tempData = item.values.map((item) => {
             if (title === "CPU") {
               return {
-                xData: item[0] * 1000,
+                xData: modifyTimestamp(item[0]),
                 [`value${index}`]: Number(item[1]),
               };
             } else {
               return {
-                xData: item[0] * 1000,
+                xData: modifyTimestamp(item[0]),
                 [`value${index}`]: Number(item[1]) / 1024 / 1024,
               };
             }
@@ -166,6 +150,14 @@ export default function AreaCard(props: {
       }),
     );
   }, [data, dataNumber, title]);
+
+  const tickFormatter = (val: string) => {
+    const formattedTick = val.toString();
+    if (longestTick.length < formattedTick.length) {
+      onLongestTickChange(formattedTick);
+    }
+    return val;
+  };
 
   return (
     <div className={className}>
@@ -198,7 +190,7 @@ export default function AreaCard(props: {
         )}
       </div>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={chartData} margin={{ left: -28, top: 6 }} syncId="sync">
+        <AreaChart data={chartData} margin={{ top: 6 }} syncId="sync">
           <CartesianGrid stroke="#f5f5f5" vertical={false} />
           <XAxis
             dataKey="xData"
@@ -210,7 +202,12 @@ export default function AreaCard(props: {
             domain={[Date.now() - 60 * 60 * 1000, Date.now()]}
             stroke="#C0C2D2"
           />
-          <YAxis fontSize="10" stroke="#9CA2A8" />
+          <YAxis
+            fontSize="10"
+            stroke="#9CA2A8"
+            width={longestTick.length * 8 + 8}
+            tickFormatter={tickFormatter}
+          />
           <ReferenceLine
             y={maxValue}
             strokeDasharray="3 3"

@@ -3,11 +3,30 @@ dotenv.config({ path: '.env.local' })
 dotenv.config()
 
 export class ServerConfig {
+  static get DEFAULT_LANGUAGE() {
+    return process.env.DEFAULT_LANGUAGE || 'en'
+  }
+
   static get DATABASE_URL() {
     if (!process.env.DATABASE_URL) {
       throw new Error('DATABASE_URL is not defined')
     }
     return process.env.DATABASE_URL
+  }
+
+  static get TRAFFIC_DATABASE_URL() {
+    if (!process.env.TRAFFIC_DATABASE_URL) {
+      return
+    }
+    return process.env.TRAFFIC_DATABASE_URL
+  }
+
+  static get NOTIFICATION_CENTER_URL() {
+    return process.env.NOTIFICATION_CENTER_URL
+  }
+
+  static get NOTIFICATION_CENTER_TOKEN() {
+    return process.env.NOTIFICATION_CENTER_TOKEN || ''
   }
 
   static get JWT_SECRET() {
@@ -43,6 +62,10 @@ export class ServerConfig {
     return process.env.DISABLED_STORAGE_TASK === 'true'
   }
 
+  static get DISABLED_STORAGE_USER_TASK() {
+    return process.env.DISABLED_STORAGE_USER_TASK === 'true'
+  }
+
   static get DISABLED_BILLING_CREATION_TASK() {
     return process.env.DISABLED_BILLING_CREATION_TASK === 'true'
   }
@@ -67,8 +90,22 @@ export class ServerConfig {
     return process.env.DISABLED_STORAGE_USAGE_LIMIT_TASK === 'true'
   }
 
+  static get DISABLE_NOTIFICATION_TASK() {
+    if (!process.env.DISABLE_NOTIFICATION_TASK) {
+      return true
+    }
+    return process.env.DISABLE_NOTIFICATION_TASK === 'true'
+  }
+
   static get APPID_LENGTH(): number {
     return parseInt(process.env.APPID_LENGTH || '6')
+  }
+
+  static get RUNTIME_CUSTOM_DEPENDENCY_BASE_PATH() {
+    return (
+      process.env.RUNTIME_CUSTOM_DEPENDENCY_BASE_PATH ||
+      '/tmp/custom_dependency'
+    )
   }
 
   static get DEFAULT_RUNTIME_IMAGE() {

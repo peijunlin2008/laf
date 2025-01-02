@@ -29,12 +29,12 @@ const DATA_DURATION = 6 * 24 * 60 * 60 * 1000;
 export default function Usage() {
   const { t } = useTranslation();
   const darkMode = useColorMode().colorMode === "dark";
-  const [endTime, setEndTime] = React.useState<Date | null>(() => {
+  const [endTime, setEndTime] = React.useState<Date>(() => {
     const today = new Date();
     today.setHours(23, 59, 59, 999);
     return today;
   });
-  const [startTime, setStartTime] = React.useState<Date | null>(() => {
+  const [startTime, setStartTime] = React.useState<Date>(() => {
     const today = new Date();
     today.setTime(today.getTime() - DATA_DURATION);
     today.setHours(0, 0, 0, 0);
@@ -47,9 +47,13 @@ export default function Usage() {
   const { data: billingAmountRes, isLoading: billLoading } = useQuery(
     ["billing", startTime, endTime],
     async () => {
+      const startOfDay = new Date(startTime);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(endTime);
+      endOfDay.setHours(23, 59, 59, 999);
       return BillingControllerGetExpense({
-        startTime: startTime?.getTime(),
-        endTime: endTime?.getTime(),
+        startTime: startOfDay?.getTime(),
+        endTime: endOfDay?.getTime(),
       });
     },
   );
@@ -57,9 +61,13 @@ export default function Usage() {
   const { data: chargeOrderAmountRes, isLoading: chargeLoading } = useQuery(
     ["chargeOrderAmount", startTime, endTime],
     async () => {
+      const startOfDay = new Date(startTime);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(endTime);
+      endOfDay.setHours(23, 59, 59, 999);
       return AccountControllerGetChargeOrderAmount({
-        startTime: startTime?.getTime(),
-        endTime: endTime?.getTime(),
+        startTime: startOfDay?.getTime(),
+        endTime: endOfDay?.getTime(),
       });
     },
   );
@@ -67,9 +75,13 @@ export default function Usage() {
   const { data: billingAmountByDayRes, isLoading: billingLoading } = useQuery(
     ["billingByDay", startTime, endTime],
     async () => {
+      const startOfDay = new Date(startTime);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(endTime);
+      endOfDay.setHours(23, 59, 59, 999);
       return BillingControllerGetExpenseByDay({
-        startTime: startTime?.getTime(),
-        endTime: endTime?.getTime(),
+        startTime: startOfDay?.getTime(),
+        endTime: endOfDay?.getTime(),
       });
     },
   );
@@ -99,7 +111,7 @@ export default function Usage() {
           setEndTime={setEndTime}
         />
       </div>
-      <div className="flex pb-6 pl-8">
+      <div className="flex pb-6 pl-14">
         <div className="flex flex-col pr-4">
           <span>{t("SettingPanel.MyAccount")}</span>
           <div className="mt-3 flex h-36 w-[306px] flex-col justify-between rounded-lg bg-primary-500 px-6 text-white">
@@ -173,8 +185,8 @@ export default function Usage() {
           </div>
         </div>
       </div>
-      <span className="pl-8">{t("SettingPanel.CostTrend")}</span>
-      <div className="mt-3 h-[160px] w-[660px] pl-8">
+      <span className="pl-14">{t("SettingPanel.CostTrend")}</span>
+      <div className="mt-3 h-[160px] w-[660px] pl-12">
         {billingLoading ? (
           <Center className="h-full w-full">
             <Spinner />

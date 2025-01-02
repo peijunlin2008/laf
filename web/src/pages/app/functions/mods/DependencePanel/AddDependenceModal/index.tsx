@@ -1,11 +1,18 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AddIcon, ExternalLinkIcon, SearchIcon, SmallCloseIcon } from "@chakra-ui/icons";
+import {
+  AddIcon,
+  ExternalLinkIcon,
+  InfoOutlineIcon,
+  SearchIcon,
+  SmallCloseIcon,
+} from "@chakra-ui/icons";
 import {
   Box,
   Button,
   Center,
   Checkbox,
+  HStack,
   Input,
   InputGroup,
   InputLeftElement,
@@ -22,6 +29,7 @@ import {
   useColorMode,
   useDisclosure,
 } from "@chakra-ui/react";
+import clsx from "clsx";
 import { debounce } from "lodash";
 
 import { EditIconLine } from "@/components/CommonIcon";
@@ -40,11 +48,11 @@ import {
 } from "../service";
 import { openDependenceDetail } from "..";
 
-import useGlobalStore from "@/pages/globalStore";
+import useGlobalStore, { State } from "@/pages/globalStore";
 
 const AddDependenceModal = () => {
   const { t } = useTranslation();
-  const globalStore = useGlobalStore((state) => state);
+  const globalStore = useGlobalStore((state: State) => state);
   const [checkList, setCheckList] = useState<TDependenceItem[]>([]);
   const [name, setName] = useState("");
   const [clickItem, setClickItem] = useState({ package: "", loading: false });
@@ -351,37 +359,53 @@ const AddDependenceModal = () => {
             )}
           </ModalBody>
 
-          <ModalFooter>
-            {checkList.length > 0 && (
-              <span
-                className="mr-2 text-lg hover:cursor-pointer "
+          <ModalFooter justifyContent={"space-between"}>
+            <HStack>
+              <span className="flex items-center text-grayModern-600">
+                <InfoOutlineIcon className="mx-1" />
+                {t("FunctionPanel.DependenceInstallTip")}
+              </span>
+            </HStack>
+            <HStack>
+              {checkList.length > 0 && (
+                <span
+                  className="mr-2 text-lg hover:cursor-pointer "
+                  onClick={() => {
+                    if (!isEdit) {
+                      setIsShowChecked((pre) => !pre);
+                    }
+                  }}
+                >
+                  <span
+                    className={clsx(
+                      "underline",
+                      "hover:text-blue-700",
+                      darkMode ? "text-blue-300 hover:text-blue-500" : "text-blue-500",
+                    )}
+                  >
+                    {t("FunctionPanel.Select")}:
+                  </span>
+                  <span className="mx-2 text-blue-500 ">
+                    {isEdit ? (
+                      packageList.length
+                    ) : isShowChecked ? (
+                      <SmallCloseIcon fontSize={16} className="align-middle" />
+                    ) : (
+                      checkList.length
+                    )}
+                  </span>
+                </span>
+              )}
+
+              <Button
+                isLoading={editPackageMutation.isLoading || addPackageMutation.isLoading}
                 onClick={() => {
-                  if (!isEdit) {
-                    setIsShowChecked((pre) => !pre);
-                  }
+                  submitDependence();
                 }}
               >
-                {t("FunctionPanel.Select")}:
-                <span className="mx-2 text-blue-500 ">
-                  {isEdit ? (
-                    packageList.length
-                  ) : isShowChecked ? (
-                    <SmallCloseIcon fontSize={16} className="align-middle" />
-                  ) : (
-                    checkList.length
-                  )}
-                </span>
-              </span>
-            )}
-
-            <Button
-              isLoading={editPackageMutation.isLoading || addPackageMutation.isLoading}
-              onClick={() => {
-                submitDependence();
-              }}
-            >
-              {t("SaveAndRestart")}
-            </Button>
+                {t("SaveAndRestart")}
+              </Button>
+            </HStack>
           </ModalFooter>
         </ModalContent>
       </Modal>

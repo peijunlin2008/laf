@@ -7,6 +7,8 @@
 
 ## Create development environment on Linux
 
+> TIP: Please confirm to operate under the root user!
+
 ```bash
 cd deploy
 
@@ -27,7 +29,9 @@ sh install-on-linux.sh $DOMAIN
 brew install --cask multipass
 ```
 
-2. Create vm & deploy in it
+2. Grant `Settings -> Security & Privacy -> Full Disk Access` for multipassd
+
+3. Create vm & deploy in it
 
 ```bash
 cd deploy

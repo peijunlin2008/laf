@@ -83,15 +83,13 @@ export class ApplicationController {
   @ApiResponseObject(ApplicationWithRelations)
   @Post()
   async create(@Body() dto: CreateApplicationDto, @InjectUser() user: User) {
-    const error = dto.autoscaling.validate()
+    const error = dto.validate() || dto.autoscaling.validate()
     if (error) {
       return ResponseUtil.error(error)
     }
 
     // check regionId exists
-    const region = await this.region.findOneDesensitized(
-      new ObjectId(dto.regionId),
-    )
+    const region = await this.region.findOne(new ObjectId(dto.regionId))
     if (!region) {
       return ResponseUtil.error(`region ${dto.regionId} not found`)
     }
@@ -117,6 +115,13 @@ export class ApplicationController {
           `you can only create ${limitOfFreeTier} trial applications`,
         )
       }
+    }
+
+    if (
+      dto.dedicatedDatabase &&
+      !region.databaseConf.dedicatedDatabase.enabled
+    ) {
+      return ResponseUtil.error('dedicated database is not enabled')
     }
 
     // check if a user exceeds the resource limit in a region
@@ -195,15 +200,22 @@ export class ApplicationController {
       'develop',
       expires,
     )
+    const openapi_token = await this.fn.generateRuntimeToken(
+      appid,
+      'openapi',
+      expires,
+    )
 
     const res = {
       ...data,
       storage: storage,
       port: region.gatewayConf.port,
       develop_token: develop_token,
+      openapi_token: openapi_token,
 
       /** This is the redundant field of Region */
       tls: region.gatewayConf.tls.enabled,
+      dedicatedDatabase: region.databaseConf.dedicatedDatabase.enabled,
     }
 
     return ResponseUtil.ok(res)
@@ -334,9 +346,37 @@ export class ApplicationController {
       }
     }
 
+    const origin = app.bundle
+    if (
+      (origin.resource.dedicatedDatabase?.limitCPU && dto.databaseCapacity) ||
+      (origin.resource.databaseCapacity && dto.dedicatedDatabase?.cpu)
+    ) {
+      return ResponseUtil.error('cannot change database type')
+    }
+
     const checkSpec = await this.checkResourceSpecification(dto, regionId)
     if (!checkSpec) {
       return ResponseUtil.error('invalid resource specification')
+    }
+
+    if (
+      dto.dedicatedDatabase?.capacity &&
+      origin.resource.dedicatedDatabase?.capacity &&
+      dto.dedicatedDatabase?.capacity <
+        origin.resource.dedicatedDatabase?.capacity
+    ) {
+      return ResponseUtil.error('cannot reduce database capacity')
+    }
+
+    if (
+      dto.dedicatedDatabase?.replicas &&
+      origin.resource.dedicatedDatabase?.replicas &&
+      dto.dedicatedDatabase?.replicas <
+        origin.resource.dedicatedDatabase?.replicas
+    ) {
+      return ResponseUtil.error(
+        'To reduce the number of database replicas, please contact customer support.',
+      )
     }
 
     // check if a user exceeds the resource limit in a region
@@ -353,13 +393,30 @@ export class ApplicationController {
     const doc = await this.application.updateBundle(appid, dto, isTrialTier)
 
     // restart running application if cpu or memory changed
-    const origin = app.bundle
     const isRunning = app.phase === ApplicationPhase.Started
     const isCpuChanged = origin.resource.limitCPU !== doc.resource.limitCPU
     const isMemoryChanged =
       origin.resource.limitMemory !== doc.resource.limitMemory
     const isAutoscalingCanceled =
       !doc.autoscaling.enable && origin.autoscaling.enable
+    const isDedicatedDatabaseChanged =
+      !!origin.resource.dedicatedDatabase &&
+      (!isEqual(
+        origin.resource.dedicatedDatabase.limitCPU,
+        doc.resource.dedicatedDatabase.limitCPU,
+      ) ||
+        !isEqual(
+          origin.resource.dedicatedDatabase.limitMemory,
+          doc.resource.dedicatedDatabase.limitMemory,
+        ) ||
+        !isEqual(
+          origin.resource.dedicatedDatabase.replicas,
+          doc.resource.dedicatedDatabase.replicas,
+        ) ||
+        !isEqual(
+          origin.resource.dedicatedDatabase.capacity,
+          doc.resource.dedicatedDatabase.capacity,
+        ))
 
     if (!isEqual(doc.autoscaling, origin.autoscaling)) {
       const { hpa, app } = await this.instance.get(appid)
@@ -368,7 +425,10 @@ export class ApplicationController {
 
     if (
       isRunning &&
-      (isCpuChanged || isMemoryChanged || isAutoscalingCanceled)
+      (isCpuChanged ||
+        isMemoryChanged ||
+        isAutoscalingCanceled ||
+        isDedicatedDatabaseChanged)
     ) {
       await this.application.updateState(appid, ApplicationState.Restarting)
     }
@@ -489,15 +549,46 @@ export class ApplicationController {
         case 'memory':
           return option.specs.some((spec) => spec.value === dto.memory)
         case 'databaseCapacity':
+          if (!dto.databaseCapacity) return true
           return option.specs.some(
             (spec) => spec.value === dto.databaseCapacity,
           )
         case 'storageCapacity':
           return option.specs.some((spec) => spec.value === dto.storageCapacity)
+        // dedicated database
+        case 'dedicatedDatabaseCPU':
+          return (
+            !dto.dedicatedDatabase?.cpu ||
+            option.specs.some(
+              (spec) => spec.value === dto.dedicatedDatabase.cpu,
+            )
+          )
+        case 'dedicatedDatabaseMemory':
+          return (
+            !dto.dedicatedDatabase?.memory ||
+            option.specs.some(
+              (spec) => spec.value === dto.dedicatedDatabase.memory,
+            )
+          )
+        case 'dedicatedDatabaseCapacity':
+          return (
+            !dto.dedicatedDatabase?.capacity ||
+            option.specs.some(
+              (spec) => spec.value === dto.dedicatedDatabase.capacity,
+            )
+          )
+        case 'dedicatedDatabaseReplicas':
+          return (
+            !dto.dedicatedDatabase?.replicas ||
+            option.specs.some(
+              (spec) => spec.value === dto.dedicatedDatabase.replicas,
+            )
+          )
         default:
           return true
       }
     })
+
     return checkSpec
   }
 }

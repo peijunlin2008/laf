@@ -17,20 +17,15 @@ import Panel from "@/components/Panel";
 import SectionList from "@/components/SectionList";
 
 import AddPolicyModal from "../mods/AddPolicyModal";
-import { useDeletePolicyMutation, usePolicyListQuery } from "../service";
+import { useDeletePolicyMutation } from "../service";
 import useDBMStore from "../store";
-export default function PolicyListPanel() {
+export default function PolicyListPanel(props: { policyList: any }) {
+  const { policyList } = props;
   const { t } = useTranslation();
   const deletePolicyMutation = useDeletePolicyMutation();
   const store = useDBMStore((state) => state);
   const darkMode = useColorMode().colorMode === "dark";
-  const policyQuery = usePolicyListQuery((data) => {
-    if (data.data.length === 0) {
-      store.setCurrentPolicy(undefined);
-    } else if (store.currentPolicy === undefined) {
-      store.setCurrentPolicy(data?.data[0]);
-    }
-  });
+
   return (
     <Panel
       className="min-w-[200px]"
@@ -49,9 +44,9 @@ export default function PolicyListPanel() {
         ]}
       />
       <div style={{ flexGrow: 1, overflowY: "auto", overflowX: "hidden" }}>
-        {policyQuery?.data?.data?.length ? (
+        {policyList?.data?.length ? (
           <SectionList>
-            {policyQuery?.data?.data.map((item: any) => {
+            {policyList?.data.map((item: any) => {
               return (
                 <SectionList.Item
                   isActive={

@@ -5,6 +5,7 @@ import * as fs from 'node:fs'
 import { pull as depPull } from '../dependency'
 import { pullAll as policyPull } from '../policy'
 import { pullAll as funcPull } from '../function'
+import { pull as envPull } from '../environment'
 import { AppSchema } from '../../schema/app'
 
 import {
@@ -13,7 +14,6 @@ import {
   GITIGNORE_FILE,
   GLOBAL_FILE,
   PACKAGE_FILE,
-  RESPONSE_FILE,
   STORAGE_TOKEN_EXPIRE,
   TEMPLATE_DIR,
   TSCONFIG_FILE,
@@ -118,6 +118,8 @@ export async function init(appid: string, options: { sync: boolean; basicMode: b
     policyPull()
     // pull functions
     funcPull({ force: true })
+    // pull env
+    envPull()
   }
   console.log(`${getEmoji('🚀')} application ${app.name} init success`)
 }
@@ -136,11 +138,6 @@ function initFunction() {
   const fromGlobalFile = path.resolve(templateDir, GLOBAL_FILE)
   const outGlobalFile = path.resolve(typeDir, GLOBAL_FILE)
   fs.writeFileSync(outGlobalFile, fs.readFileSync(fromGlobalFile, 'utf-8'))
-
-  // generate response.d.ts
-  const fromResponseFile = path.resolve(templateDir, RESPONSE_FILE)
-  const outResponseFile = path.resolve(TYPE_DIR, RESPONSE_FILE)
-  fs.writeFileSync(outResponseFile, fs.readFileSync(fromResponseFile, 'utf-8'))
 
   // generate package.json
   const fromPackageFile = path.resolve(templateDir, PACKAGE_FILE)
